@@ -1,14 +1,16 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "es5",
-    "sourceMap": true,
-    "outDir": "dist"
-  },
-  "include": [
-    "src/**/*.*"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+    "compilerOptions": {
+        "module": "ES6",
+        "strict": true,
+        "target": "ESNext",
+        "sourceMap": true,
+        "esModuleInterop": true,
+        "moduleResolution": "NodeNext",
+        "outDir": "dist",
+        "rootDir": "src"
+    },
+    "exclude": [
+        "node_modules",
+        "src/**/*.test.ts"
+    ]
 }
