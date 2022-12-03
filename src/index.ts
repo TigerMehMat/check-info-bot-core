@@ -1,7 +1,31 @@
+/* eslint-disable no-await-in-loop */
 import { Client, GatewayIntentBits, TextChannel } from 'discord.js';
-import type { IIntoBotOptions, IWatchOptions } from './types.js';
+import got from 'got';
+import type {
+    IIntoBotOptions, IWatchOptions, IWatchParserFunction,
+} from './types.js';
+
+function asyncTimeout(ms: number) {
+    return new Promise((resolve) => { setTimeout(resolve, ms); });
+}
+
+async function getValue(url: string, parser: IWatchParserFunction) {
+    try {
+        const res = await got.get(url)
+            .text();
+        return parser(res);
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Error -_- Can not get items');
+        return null;
+    }
+}
 
 async function runWatch(options: IWatchOptions, client: Client<true>) {
+    if (options.timeToCheckMinutes < 1) {
+        throw new Error('Please, do not DDOS API!!!');
+    }
+
     const guild = await client.guilds.fetch(options.guild);
     if (!guild) {
         throw new Error(`Guild ${options.guild} not found`);
@@ -13,20 +37,46 @@ async function runWatch(options: IWatchOptions, client: Client<true>) {
     if (!(channel instanceof TextChannel)) {
         throw new Error(`Channel ${options.channel} is not text type`);
     }
-    await channel.send('qwe');
+
+    let musterValues = await getValue(options.url, options.parser);
+
+    if (musterValues === null) {
+        throw new Error('Fail start data');
+    }
+
+    // eslint-disable-next-line no-constant-condition
+    while (1) {
+        await asyncTimeout(1000 * 60 * options.timeToCheckMinutes);
+
+        const currentValue = await getValue(options.url, options.parser);
+
+        if (currentValue === null) {
+            // eslint-disable-next-line no-continue
+            continue;
+        }
+
+        if (!options.equal(musterValues, currentValue)) {
+            options.sendResult(musterValues, currentValue, channel);
+            musterValues = currentValue;
+        }
+    }
 }
 
-export function initInformationBot(options: IIntoBotOptions) {
+export function initInformationBot({
+    logger = console,
+    info,
+    watches,
+}: IIntoBotOptions) {
     const client = new Client({
         intents: [GatewayIntentBits.Guilds],
     });
 
     client.once('ready', async () => {
-        console.log(`${client.user?.tag} ready`);
+        logger.log(`${client.user?.tag} ready`);
 
-        options.watches.forEach((opt) => runWatch(opt, client));
+        watches.forEach((opt) => runWatch(opt, client));
     });
 
-    client.login(options.info.token)
+    client.login(info.token)
         .then();
 }
