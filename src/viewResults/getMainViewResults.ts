@@ -1,4 +1,4 @@
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, escapeMarkdown } from 'discord.js';
 import _ from 'lodash';
 import { ISendResultFunction } from '../types.js';
 
@@ -29,9 +29,16 @@ export const getMainViewResults: (options: ISendResultFunctionProps) => ISendRes
             if (typeof oldData[name] === 'undefined') {
                 return null;
             }
-            return valueNotChanged(name, oldData[name]);
+            return valueNotChanged(
+                escapeMarkdown(name),
+                escapeMarkdown(oldData[name]),
+            );
         }
-        return valueChanged(name, oldData[name], newData[name]);
+        return valueChanged(
+            escapeMarkdown(name),
+            escapeMarkdown(oldData[name]),
+            escapeMarkdown(newData[name]),
+        );
     }));
     const result = new EmbedBuilder()
         .setDescription(res.join('\n'))
